@@ -328,6 +328,7 @@ void CBot::Tick()
 	vec2 Pos = pMe->m_Pos;
 
 	bool InSight = false;
+
 	if(m_ComputeTarget.m_Type == CTarget::TARGET_PLAYER)
 	{
 		const CCharacterCore *pClosest = GameServer()->m_apPlayers[m_ComputeTarget.m_PlayerCID]->GetCharacter()->GetCore();
@@ -360,12 +361,21 @@ void CBot::Tick()
 	if(g_Config.m_SvBotAllowMove && g_Config.m_SvBotAllowHook)
 		HandleHook(InSight);
 
-	if(m_Flags & BFLAG_LEFT)
-			m_InputData.m_Direction = -1;
-	if(m_Flags & BFLAG_RIGHT)
-			m_InputData.m_Direction = 1;
-	if(m_Flags & BFLAG_JUMP)
-			m_InputData.m_Jump = 1;
+	//avoid player
+	if(!m_pPlayer->GetCharacter()->CanFire() && InSight)
+	{
+		//avoiding maneuvers
+		printf("Do a barrel roll!  Tick: %i\n", m_pGameServer->Server()->Tick());
+		m_InputData.m_Direction = ((int)((float)m_pGameServer->Server()->Tick() / 10.0f) % 2) * 2 -1;
+		//every 30 ticks the direction switches to either 1 or -1
+	}else { //normal movement behaviour
+		if(m_Flags & BFLAG_LEFT)
+				m_InputData.m_Direction = -1;
+		if(m_Flags & BFLAG_RIGHT)
+				m_InputData.m_Direction = 1;
+		if(m_Flags & BFLAG_JUMP)
+				m_InputData.m_Jump = 1;
+	}
 	// else if(!m_InputData.m_Fire && m_Flags & BFLAG_FIRE && m_LastData.m_Fire == 0)
 	// 	m_InputData.m_Fire = 1;
 
@@ -378,6 +388,8 @@ void CBot::Tick()
 		m_InputData.m_TargetX = m_Target.x;
 		m_InputData.m_TargetY = m_Target.y;
 	}
+
+	
 
 
 	if(!g_Config.m_SvBotAllowMove) {
